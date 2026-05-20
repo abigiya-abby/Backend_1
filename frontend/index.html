@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AASTU Events Hub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 80px 24px 60px;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.35) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 80% 80%, rgba(99,102,241,0.2) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 10% 90%, rgba(6,182,212,0.15) 0%, transparent 60%);
+      z-index: 0;
+    }
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 0;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 760px;
+      animation: fadeIn 0.8s ease forwards;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--purple-light);
+      margin-bottom: 28px;
+    }
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-light); animation: pulse 2s infinite; }
+    .hero-title {
+      font-size: clamp(40px, 7vw, 72px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin-top: 64px;
+      flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 28px; font-weight: 800; }
+    .hero-stat-label { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── Featured Events ── */
+    .events-section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .section-title { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
+    .section-desc { font-size: 15px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* ── Features bento ── */
+    .features-section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+    .bento-card {
+      padding: 28px;
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+    .bento-card.wide { grid-column: span 2; }
+    .bento-card.tall { grid-row: span 2; }
+    .bento-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .bento-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .bento-desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+    .bento-glow {
+      position: absolute;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      filter: blur(60px);
+      pointer-events: none;
+      opacity: 0.3;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 80px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-inner {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 80% at 50% 50%, rgba(124,58,237,0.2) 0%, transparent 70%);
+    }
+    .cta-title { font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 16px; }
+    .cta-desc  { font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    footer a { color: var(--purple-light); }
+
+    @media (max-width: 768px) {
+      .bento-grid { grid-template-columns: 1fr; }
+      .bento-card.wide { grid-column: span 1; }
+      .hero-stats { gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/frontend/index.html" class="active">Home</a></li>
+    <li><a href="/frontend/pages/events.html">Events</a></li>
+  </ul>
+  <div class="navbar-actions" id="nav-actions"></div>
+  <button class="hamburger" id="hamburger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <a href="/frontend/index.html">Home</a>
+  <a href="/frontend/pages/events.html">Events</a>
+  <div id="mobile-nav-actions" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span></span> AASTU's Official Event Platform
+      </div>
+      <h1 class="hero-title">
+        Discover &amp; Join<br>
+        <span class="gradient-text">University Events</span>
+      </h1>
+      <p class="hero-sub">
+        Explore hackathons, bootcamps, conferences and more.
+        Register in seconds and never miss what's happening on campus.
+      </p>
+      <div class="hero-actions">
+        <a href="/frontend/pages/events.html" class="btn btn-primary btn-lg">
+          Explore Events →
+        </a>
+        <a href="/frontend/pages/register.html" class="btn btn-ghost btn-lg">
+          Create Account
+        </a>
+      </div>
+      <div class="hero-stats" id="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text" id="stat-events">—</div>
+          <div class="hero-stat-label">Events</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text" id="stat-students">—</div>
+          <div class="hero-stat-label">Students</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value gradient-text" id="stat-regs">—</div>
+          <div class="hero-stat-label">Registrations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UPCOMING EVENTS -->
+  <section class="events-section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Upcoming Events</h2>
+        <p class="section-desc">Don't miss what's happening next on campus</p>
+      </div>
+      <a href="/frontend/pages/events.html" class="btn btn-ghost">View all →</a>
+    </div>
+    <div class="grid-3" id="featured-events">
+      <!-- injected by JS -->
+      <div class="glass" style="padding:40px;text-align:center;grid-column:1/-1">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES BENTO -->
+  <section class="features-section">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Everything you need</h2>
+        <p class="section-desc">One platform for the entire AASTU event experience</p>
+      </div>
+    </div>
+    <div class="bento-grid">
+      <div class="bento-card wide" style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(99,102,241,0.08))">
+        <div class="bento-glow" style="background:rgba(124,58,237,0.4);top:-50px;left:-50px"></div>
+        <span class="bento-icon">🚀</span>
+        <div class="bento-title">Instant Registration</div>
+        <div class="bento-desc">Register for any event in one click. Your spot is confirmed immediately with a registration ID you can use for check-in.</div>
+      </div>
+      <div class="bento-card" style="background:linear-gradient(135deg,rgba(6,182,212,0.1),rgba(99,102,241,0.05))">
+        <div class="bento-glow" style="background:rgba(6,182,212,0.3);bottom:-30px;right:-30px"></div>
+        <span class="bento-icon">📅</span>
+        <div class="bento-title">Smart Calendar</div>
+        <div class="bento-desc">All your registered events in one personal dashboard, sorted by date.</div>
+      </div>
+      <div class="bento-card">
+        <span class="bento-icon">🔍</span>
+        <div class="bento-title">Search &amp; Filter</div>
+        <div class="bento-desc">Find events by category, club, or keyword instantly.</div>
+      </div>
+      <div class="bento-card">
+        <span class="bento-icon">🏆</span>
+        <div class="bento-title">Club Events</div>
+        <div class="bento-desc">Follow your favourite clubs and see all their upcoming events in one place.</div>
+      </div>
+      <div class="bento-card wide" style="background:linear-gradient(135deg,rgba(236,72,153,0.08),rgba(124,58,237,0.08))">
+        <div class="bento-glow" style="background:rgba(236,72,153,0.3);top:-30px;right:-30px"></div>
+        <span class="bento-icon">🎤</span>
+        <div class="bento-title">Speaker Spotlights</div>
+        <div class="bento-desc">Every event page features speaker bios, venue details, and a live attendee count so you know how popular an event is before you register.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-bg"></div>
+    <div class="cta-inner">
+      <h2 class="cta-title">Ready to get involved?</h2>
+      <p class="cta-desc">Join hundreds of AASTU students already using the platform to discover and attend campus events.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="/frontend/pages/register.html" class="btn btn-primary btn-lg">Get started free</a>
+        <a href="/frontend/pages/events.html"   class="btn btn-ghost btn-lg">Browse events</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 AASTU Events Hub · Built with ❤️ by She Codes AASTU</p>
+  </footer>
+
+</div><!-- /page -->
+
+<div id="toast-container"></div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+  renderNavAuth();
+  initHamburger();
+  setActiveNav();
+
+  // Load featured upcoming events
+  async function loadFeatured() {
+    try {
+      const events = await api.events.getAll({ upcoming: 'true' });
+      const container = document.getElementById('featured-events');
+      const slice = events.slice(0, 6);
+      if (slice.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-title">No upcoming events yet</div>
+          <div class="empty-state-desc">Check back soon — events are being added.</div>
+        </div>`;
+      } else {
+        container.innerHTML = slice.map(eventCardHTML).join('');
+      }
+    } catch (e) {
+      document.getElementById('featured-events').innerHTML =
+        `<div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-title">Could not load events</div>
+          <div class="empty-state-desc">Make sure the backend is running.</div>
+        </div>`;
+    }
+  }
+
+  // Load hero stats (admin only endpoint, graceful fallback)
+  async function loadStats() {
+    try {
+      const s = await api.admin.stats();
+      document.getElementById('stat-events').textContent   = s.total_events;
+      document.getElementById('stat-students').textContent = s.total_users;
+      document.getElementById('stat-regs').textContent     = s.total_registrations;
+    } catch {
+      // not admin — just show dashes, that's fine
+    }
+  }
+
+  loadFeatured();
+  loadStats();
+</script>
+</body>
+</html>

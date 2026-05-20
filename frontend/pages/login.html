@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In · AASTU Events Hub</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 60% at 20% 20%, rgba(124,58,237,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 80% 80%, rgba(99,102,241,0.15) 0%, transparent 60%);
+    }
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+      border-radius: var(--radius-xl);
+      background: rgba(13,13,26,0.9);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      animation: fadeIn 0.5s ease forwards;
+    }
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+      justify-content: center;
+    }
+    .auth-logo .logo-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px; }
+    .auth-title { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .auth-sub   { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 32px; }
+
+    .auth-form { display: flex; flex-direction: column; gap: 18px; }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .auth-footer a { color: var(--purple-light); font-weight: 500; }
+    .auth-footer a:hover { text-decoration: underline; }
+
+    .input-wrap { position: relative; }
+    .input-wrap .toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+    }
+    .input-wrap input { padding-right: 40px; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <div class="navbar-actions">
+    <a href="/frontend/pages/register.html" class="btn btn-ghost btn-sm">Create account</a>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-bg"></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon" style="background:var(--grad-primary);display:flex;align-items:center;justify-content:center">🎓</div>
+    </div>
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">Sign in to your AASTU Events account</p>
+
+    <form class="auth-form" id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-input" id="email" placeholder="you@aastu.edu.et" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <input type="password" class="form-input" id="password" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="toggle-pw" onclick="togglePw('password', this)">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%;justify-content:center;margin-top:4px">
+        Sign in
+      </button>
+
+      <div id="error-msg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-md);padding:12px;font-size:13px;color:#fca5a5;text-align:center"></div>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="/frontend/pages/register.html">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  // Redirect if already logged in
+  if (Auth.isLoggedIn()) {
+    window.location.href = Auth.isAdmin()
+      ? '/frontend/pages/admin.html'
+      : '/frontend/pages/dashboard.html';
+  }
+
+  function togglePw(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else                         { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Signing in…`;
+
+    try {
+      const data = await api.auth.login({
+        email:    document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      });
+      Auth.save(data.token, data.user);
+      showToast(`Welcome back, ${data.user.full_name.split(' ')[0]}! 👋`, 'success');
+
+      // Check for redirect param
+      const redirect = new URLSearchParams(window.location.search).get('redirect');
+      setTimeout(() => {
+        window.location.href = redirect || (data.user.role === 'admin'
+          ? '/frontend/pages/admin.html'
+          : '/frontend/pages/dashboard.html');
+      }, 700);
+    } catch (e) {
+      err.textContent = e.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Sign in';
+    }
+  }
+</script>
+</body>
+</html>

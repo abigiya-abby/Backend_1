@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events · AASTU Events Hub</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    .events-hero {
+      padding: 60px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .events-hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,58,237,0.2) 0%, transparent 70%);
+    }
+    .events-hero h1 { font-size: clamp(28px,5vw,48px); font-weight: 900; letter-spacing: -0.02em; position: relative; }
+    .events-hero p  { color: var(--text-secondary); margin-top: 10px; font-size: 16px; position: relative; }
+
+    /* Search + filters bar */
+    .filters-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 40px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 220px;
+      position: relative;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-wrap input { padding-left: 40px; }
+
+    .filter-select {
+      min-width: 150px;
+    }
+
+    .filter-chip {
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .filter-chip:hover,
+    .filter-chip.active {
+      background: rgba(124,58,237,0.15);
+      border-color: rgba(124,58,237,0.4);
+      color: var(--purple-light);
+    }
+
+    .events-grid-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .results-count {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/frontend/index.html">Home</a></li>
+    <li><a href="/frontend/pages/events.html" class="active">Events</a></li>
+  </ul>
+  <div class="navbar-actions" id="nav-actions"></div>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-nav" id="mobile-nav">
+  <a href="/frontend/index.html">Home</a>
+  <a href="/frontend/pages/events.html">Events</a>
+  <div id="mobile-nav-actions" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+</div>
+
+<div class="page">
+
+  <div class="events-hero">
+    <div class="events-hero-bg"></div>
+    <h1>All <span class="gradient-text">Events</span></h1>
+    <p>Discover what's happening across AASTU</p>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" class="form-input" id="search-input" placeholder="Search events, speakers…" />
+    </div>
+    <select class="form-input filter-select" id="category-filter">
+      <option value="">All Categories</option>
+    </select>
+    <select class="form-input filter-select" id="club-filter">
+      <option value="">All Clubs</option>
+    </select>
+    <button class="filter-chip active" id="chip-all"      onclick="setChip('all')">All</button>
+    <button class="filter-chip"        id="chip-upcoming" onclick="setChip('upcoming')">Upcoming</button>
+  </div>
+
+  <!-- GRID -->
+  <div class="events-grid-wrap">
+    <div class="results-count" id="results-count"></div>
+    <div class="grid-3" id="events-grid">
+      <div class="glass" style="padding:60px;text-align:center;grid-column:1/-1">
+        <div class="spinner" style="margin:0 auto 12px"></div>
+        <div style="color:var(--text-muted);font-size:14px">Loading events…</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  renderNavAuth();
+  initHamburger();
+
+  let allEvents = [];
+  let currentChip = 'all';
+
+  async function init() {
+    // Load categories & clubs for filters
+    try {
+      const [cats, clubs] = await Promise.all([api.categories.getAll(), api.clubs.getAll()]);
+      const catSel = document.getElementById('category-filter');
+      cats.forEach(c => catSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+      const clubSel = document.getElementById('club-filter');
+      clubs.forEach(c => clubSel.innerHTML += `<option value="${c.id}">${c.club_name}</option>`);
+    } catch {}
+
+    await loadEvents();
+  }
+
+  async function loadEvents() {
+    const search      = document.getElementById('search-input').value.trim();
+    const category_id = document.getElementById('category-filter').value;
+    const club_id     = document.getElementById('club-filter').value;
+    const params = {};
+    if (search)      params.search      = search;
+    if (category_id) params.category_id = category_id;
+    if (club_id)     params.club_id     = club_id;
+    if (currentChip === 'upcoming') params.upcoming = 'true';
+
+    const grid = document.getElementById('events-grid');
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>`;
+
+    try {
+      allEvents = await api.events.getAll(params);
+      renderEvents(allEvents);
+    } catch (e) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Failed to load events</div>
+        <div class="empty-state-desc">${e.message}</div>
+      </div>`;
+    }
+  }
+
+  function renderEvents(events) {
+    const grid = document.getElementById('events-grid');
+    document.getElementById('results-count').textContent =
+      events.length ? `${events.length} event${events.length !== 1 ? 's' : ''} found` : '';
+
+    if (events.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">No events found</div>
+        <div class="empty-state-desc">Try adjusting your search or filters.</div>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = events.map(eventCardHTML).join('');
+  }
+
+  function setChip(chip) {
+    currentChip = chip;
+    document.getElementById('chip-all').classList.toggle('active', chip === 'all');
+    document.getElementById('chip-upcoming').classList.toggle('active', chip === 'upcoming');
+    loadEvents();
+  }
+
+  // Debounced search
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadEvents, 350);
+  });
+  document.getElementById('category-filter').addEventListener('change', loadEvents);
+  document.getElementById('club-filter').addEventListener('change', loadEvents);
+
+  init();
+</script>
+</body>
+</html>

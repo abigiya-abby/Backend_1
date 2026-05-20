@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up · AASTU Events Hub</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 60% at 80% 20%, rgba(99,102,241,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 20% 80%, rgba(6,182,212,0.12) 0%, transparent 60%);
+    }
+    .auth-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 460px;
+      padding: 40px;
+      border-radius: var(--radius-xl);
+      background: rgba(13,13,26,0.9);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      animation: fadeIn 0.5s ease forwards;
+    }
+    .auth-title { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .auth-sub   { font-size: 14px; color: var(--text-muted); text-align: center; margin-bottom: 32px; }
+    .auth-form  { display: flex; flex-direction: column; gap: 16px; }
+    .auth-footer { text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-muted); }
+    .auth-footer a { color: var(--purple-light); font-weight: 500; }
+    .auth-footer a:hover { text-decoration: underline; }
+    .input-wrap { position: relative; }
+    .input-wrap .toggle-pw {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px;
+    }
+    .input-wrap input { padding-right: 40px; }
+    .strength-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); margin-top: 6px; overflow: hidden; }
+    .strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <div class="navbar-actions">
+    <a href="/frontend/pages/login.html" class="btn btn-ghost btn-sm">Sign in</a>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-bg"></div>
+  <div class="auth-card">
+    <h1 class="auth-title">Create your account</h1>
+    <p class="auth-sub">Join AASTU Events Hub and never miss a campus event</p>
+
+    <form class="auth-form" id="reg-form" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input type="text" class="form-input" id="full_name" placeholder="Abebe Kebede" required autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-input" id="email" placeholder="you@aastu.edu.et" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Department</label>
+        <select class="form-input" id="department">
+          <option value="">Select department (optional)</option>
+          <option>Software Engineering</option>
+          <option>Computer Science</option>
+          <option>Electrical Engineering</option>
+          <option>Civil Engineering</option>
+          <option>Mechanical Engineering</option>
+          <option>Architecture</option>
+          <option>Chemical Engineering</option>
+          <option>Industrial Engineering</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <input type="password" class="form-input" id="password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password" oninput="checkStrength(this.value)" />
+          <button type="button" class="toggle-pw" onclick="togglePw('password', this)">👁</button>
+        </div>
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill" style="width:0%"></div></div>
+        <div id="strength-label" style="font-size:11px;color:var(--text-muted);margin-top:3px"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%;justify-content:center;margin-top:4px">
+        Create account
+      </button>
+
+      <div id="error-msg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-md);padding:12px;font-size:13px;color:#fca5a5;text-align:center"></div>
+    </form>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/frontend/pages/login.html">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  if (Auth.isLoggedIn()) window.location.href = '/frontend/pages/dashboard.html';
+
+  function togglePw(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+    else                         { inp.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  function checkStrength(pw) {
+    const fill  = document.getElementById('strength-fill');
+    const label = document.getElementById('strength-label');
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    const levels = [
+      { w: '0%',   c: 'transparent', t: '' },
+      { w: '25%',  c: '#ef4444',     t: 'Weak' },
+      { w: '50%',  c: '#f97316',     t: 'Fair' },
+      { w: '75%',  c: '#eab308',     t: 'Good' },
+      { w: '100%', c: '#22c55e',     t: 'Strong' },
+    ];
+    fill.style.width      = levels[score].w;
+    fill.style.background = levels[score].c;
+    label.textContent     = levels[score].t;
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Creating account…`;
+
+    try {
+      await api.auth.register({
+        full_name:  document.getElementById('full_name').value.trim(),
+        email:      document.getElementById('email').value.trim(),
+        password:   document.getElementById('password').value,
+        department: document.getElementById('department').value || undefined,
+      });
+      showToast('Account created! Signing you in…', 'success');
+
+      // Auto-login
+      const data = await api.auth.login({
+        email:    document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      });
+      Auth.save(data.token, data.user);
+      setTimeout(() => window.location.href = '/frontend/pages/dashboard.html', 800);
+    } catch (e) {
+      err.textContent = e.message;
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Create account';
+    }
+  }
+</script>
+</body>
+</html>

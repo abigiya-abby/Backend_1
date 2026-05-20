@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event · AASTU Events Hub</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    .event-hero {
+      position: relative;
+      min-height: 340px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+    .event-hero-img {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #1e1b4b, #312e81, #1e3a5f);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 100px;
+    }
+    .event-hero-img img { width:100%; height:100%; object-fit:cover; }
+    .event-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(8,8,16,1) 0%, rgba(8,8,16,0.5) 50%, transparent 100%);
+    }
+    .event-hero-content {
+      position: relative;
+      z-index: 1;
+      padding: 40px 24px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .event-layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 32px;
+      align-items: start;
+    }
+    .event-body {}
+    .event-sidebar {}
+
+    .event-description {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .info-card {
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 84px;
+    }
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .info-row-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(124,58,237,0.15);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+    .info-row-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-row-value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+    .capacity-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .capacity-fill {
+      height: 100%;
+      background: var(--grad-primary);
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    @media (max-width: 768px) {
+      .event-layout { grid-template-columns: 1fr; }
+      .info-card { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/frontend/index.html">Home</a></li>
+    <li><a href="/frontend/pages/events.html">Events</a></li>
+  </ul>
+  <div class="navbar-actions" id="nav-actions"></div>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-nav" id="mobile-nav">
+  <a href="/frontend/index.html">Home</a>
+  <a href="/frontend/pages/events.html">Events</a>
+  <div id="mobile-nav-actions" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+</div>
+
+<div class="page" id="page-content">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:60vh">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  renderNavAuth();
+  initHamburger();
+
+  const params = new URLSearchParams(window.location.search);
+  const eventId = params.get('id');
+
+  if (!eventId) window.location.href = '/frontend/pages/events.html';
+
+  async function loadEvent() {
+    try {
+      const ev = await api.events.getOne(eventId);
+      renderEvent(ev);
+    } catch (e) {
+      document.getElementById('page-content').innerHTML = `
+        <div class="empty-state" style="min-height:60vh">
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-title">Event not found</div>
+          <div class="empty-state-desc">${e.message}</div>
+          <a href="/frontend/pages/events.html" class="btn btn-outline" style="margin-top:16px">← Back to Events</a>
+        </div>`;
+    }
+  }
+
+  function renderEvent(ev) {
+    const emoji = ['🎓','🚀','💡','🎤','🏆','🌟','💻','🎯'][ev.id % 8];
+    const pct = ev.capacity ? Math.min(100, Math.round((ev.registration_count / ev.capacity) * 100)) : 0;
+    const spotsLeft = ev.capacity ? ev.capacity - ev.registration_count : null;
+    const isPast = new Date(ev.event_date) < new Date();
+
+    document.title = `${ev.title} · AASTU Events Hub`;
+
+    document.getElementById('page-content').innerHTML = `
+      <!-- HERO -->
+      <div class="event-hero">
+        <div class="event-hero-img">
+          ${ev.image ? `<img src="${ev.image}" alt="${ev.title}">` : emoji}
+        </div>
+        <div class="event-hero-overlay"></div>
+        <div class="event-hero-content">
+          <a href="/frontend/pages/events.html" style="font-size:13px;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;margin-bottom:16px">
+            ← All Events
+          </a>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            ${ev.category_name ? `<span class="badge badge-purple">${ev.category_name}</span>` : ''}
+            ${ev.club_name     ? `<span class="badge badge-cyan">${ev.club_name}</span>` : ''}
+            ${isPast ? `<span class="badge badge-red">Past Event</span>` : `<span class="badge badge-green">Upcoming</span>`}
+          </div>
+          <h1 style="font-size:clamp(24px,4vw,44px);font-weight:900;letter-spacing:-0.02em;line-height:1.2">${ev.title}</h1>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="event-layout">
+        <div class="event-body">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">About this event</h2>
+          <p class="event-description">${ev.description || 'No description provided.'}</p>
+        </div>
+
+        <div class="event-sidebar">
+          <div class="info-card">
+            <div class="info-row">
+              <div class="info-row-icon">📅</div>
+              <div>
+                <div class="info-row-label">Date &amp; Time</div>
+                <div class="info-row-value">${formatDateTime(ev.event_date)}</div>
+              </div>
+            </div>
+            ${ev.venue ? `
+            <div class="info-row">
+              <div class="info-row-icon">📍</div>
+              <div>
+                <div class="info-row-label">Venue</div>
+                <div class="info-row-value">${ev.venue}</div>
+              </div>
+            </div>` : ''}
+            ${ev.speaker ? `
+            <div class="info-row">
+              <div class="info-row-icon">🎤</div>
+              <div>
+                <div class="info-row-label">Speaker</div>
+                <div class="info-row-value">${ev.speaker}</div>
+              </div>
+            </div>` : ''}
+            ${ev.club_name ? `
+            <div class="info-row">
+              <div class="info-row-icon">🏛️</div>
+              <div>
+                <div class="info-row-label">Organised by</div>
+                <div class="info-row-value">${ev.club_name}</div>
+              </div>
+            </div>` : ''}
+
+            <div class="divider" style="margin:4px 0"></div>
+
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+                <span style="color:var(--text-muted)">Capacity</span>
+                <span style="font-weight:600">${ev.registration_count} / ${ev.capacity || '∞'}</span>
+              </div>
+              ${ev.capacity ? `
+              <div class="capacity-bar">
+                <div class="capacity-fill" style="width:${pct}%"></div>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px">
+                ${spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Event is full'}
+              </div>` : ''}
+            </div>
+
+            <div id="register-area">
+              <!-- injected by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderRegisterArea(ev, isPast, spotsLeft);
+  }
+
+  function renderRegisterArea(ev, isPast, spotsLeft) {
+    const area = document.getElementById('register-area');
+    if (!area) return;
+
+    if (isPast) {
+      area.innerHTML = `<div class="badge badge-red" style="width:100%;justify-content:center;padding:10px">This event has ended</div>`;
+      return;
+    }
+    if (spotsLeft !== null && spotsLeft <= 0) {
+      area.innerHTML = `<div class="badge badge-yellow" style="width:100%;justify-content:center;padding:10px">Event is full</div>`;
+      return;
+    }
+    if (!Auth.isLoggedIn()) {
+      area.innerHTML = `
+        <a href="/frontend/pages/login.html?redirect=/frontend/pages/event.html?id=${ev.id}" class="btn btn-primary" style="width:100%;justify-content:center">
+          Sign in to Register
+        </a>`;
+      return;
+    }
+
+    area.innerHTML = `
+      <button class="btn btn-primary" id="reg-btn" style="width:100%;justify-content:center" onclick="registerForEvent(${ev.id})">
+        Register Now
+      </button>
+      <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px">
+        Free · Instant confirmation
+      </p>`;
+  }
+
+  async function registerForEvent(id) {
+    const btn = document.getElementById('reg-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Registering…`;
+    try {
+      await api.registrations.register(id);
+      showToast('You\'re registered! 🎉', 'success');
+      btn.innerHTML = '✅ Registered';
+      btn.style.background = 'rgba(34,197,94,0.2)';
+      btn.style.color = '#86efac';
+      btn.style.border = '1px solid rgba(34,197,94,0.3)';
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Register Now';
+    }
+  }
+
+  loadEvent();
+</script>
+</body>
+</html>
