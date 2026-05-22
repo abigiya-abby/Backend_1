@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Dashboard · AASTU Events Hub</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <style>
+    .dash-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* Profile header */
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 28px;
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(124,58,237,0.25), transparent 70%);
+      pointer-events: none;
+    }
+    .avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--grad-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      border: 2px solid rgba(124,58,237,0.4);
+    }
+    .profile-info { flex: 1; }
+    .profile-name { font-size: 22px; font-weight: 800; }
+    .profile-meta { font-size: 13px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .profile-meta span { display: flex; align-items: center; gap: 4px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      position: relative;
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-btn.active {
+      color: var(--purple-light);
+      background: rgba(124,58,237,0.08);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: var(--grad-primary);
+      border-radius: 2px 2px 0 0;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+    /* Registration card */
+    .reg-card {
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all var(--transition);
+      align-items: flex-start;
+    }
+    .reg-card:hover { border-color: var(--border-hover); }
+    .reg-card-emoji {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .reg-card-body { flex: 1; min-width: 0; }
+    .reg-card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reg-card-meta  { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .reg-card-info  { display: flex; gap: 16px; flex-wrap: wrap; }
+    .reg-card-info-item { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+    .reg-card-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* Profile edit form */
+    .profile-form {
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .reg-card { flex-direction: column; }
+      .reg-card-actions { flex-direction: row; }
+      .profile-header { flex-direction: column; text-align: center; }
+      .profile-meta { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/frontend/index.html" class="navbar-brand">
+    <div class="logo-icon">🎓</div>
+    <span>AASTU <span class="gradient-text">Events</span></span>
+  </a>
+  <ul class="navbar-links">
+    <li><a href="/frontend/index.html">Home</a></li>
+    <li><a href="/frontend/pages/events.html">Events</a></li>
+    <li><a href="/frontend/pages/dashboard.html" class="active">Dashboard</a></li>
+  </ul>
+  <div class="navbar-actions" id="nav-actions"></div>
+  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mobile-nav" id="mobile-nav">
+  <a href="/frontend/index.html">Home</a>
+  <a href="/frontend/pages/events.html">Events</a>
+  <a href="/frontend/pages/dashboard.html">Dashboard</a>
+  <div id="mobile-nav-actions" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;"></div>
+</div>
+
+<div class="page">
+  <div class="dash-wrap">
+
+    <!-- PROFILE HEADER -->
+    <div class="profile-header" id="profile-header">
+      <div style="display:flex;align-items:center;gap:16px;width:100%">
+        <div class="avatar" id="avatar-initials">?</div>
+        <div class="profile-info">
+          <div class="profile-name" id="profile-name">Loading…</div>
+          <div class="profile-meta" id="profile-meta"></div>
+        </div>
+        <a href="/frontend/pages/events.html" class="btn btn-primary btn-sm" style="margin-left:auto;flex-shrink:0">
+          Browse Events
+        </a>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('my-events')">My Events</button>
+      <button class="tab-btn"        onclick="switchTab('profile')">Profile</button>
+    </div>
+
+    <!-- TAB: MY EVENTS -->
+    <div class="tab-panel active" id="tab-my-events">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <h2 style="font-size:18px;font-weight:700">Registered Events</h2>
+        <div style="display:flex;gap:8px">
+          <button class="filter-chip active" id="chip-all"       onclick="filterRegs('all')">All</button>
+          <button class="filter-chip"        id="chip-upcoming"  onclick="filterRegs('upcoming')">Upcoming</button>
+          <button class="filter-chip"        id="chip-past"      onclick="filterRegs('past')">Past</button>
+        </div>
+      </div>
+      <div id="regs-list" style="display:flex;flex-direction:column;gap:12px">
+        <div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </div>
+
+    <!-- TAB: PROFILE -->
+    <div class="tab-panel" id="tab-profile">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:24px">Edit Profile</h2>
+      <form class="profile-form" id="profile-form" onsubmit="saveProfile(event)">
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input type="text" class="form-input" id="edit-name" placeholder="Your full name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select class="form-input" id="edit-dept">
+            <option value="">Select department</option>
+            <option>Software Engineering</option>
+            <option>Computer Science</option>
+            <option>Electrical Engineering</option>
+            <option>Civil Engineering</option>
+            <option>Mechanical Engineering</option>
+            <option>Architecture</option>
+            <option>Chemical Engineering</option>
+            <option>Industrial Engineering</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="divider"></div>
+        <div class="form-group">
+          <label class="form-label">New password <span style="color:var(--text-muted)">(leave blank to keep current)</span></label>
+          <input type="password" class="form-input" id="edit-pw" placeholder="••••••••" minlength="8" autocomplete="new-password" />
+        </div>
+        <button type="submit" class="btn btn-primary" id="save-btn" style="width:fit-content">
+          Save changes
+        </button>
+        <div id="profile-msg" style="display:none"></div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<!-- CANCEL CONFIRM MODAL -->
+<div class="modal-overlay" id="cancel-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cancel Registration</div>
+      <button class="modal-close" onclick="closeModal('cancel-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px">
+      Are you sure you want to cancel your registration for <strong id="cancel-event-name"></strong>?
+    </p>
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('cancel-modal')">Keep it</button>
+      <button class="btn btn-danger" id="confirm-cancel-btn" onclick="confirmCancel()">Yes, cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  if (!requireAuth()) throw new Error('redirect');
+
+  let allRegs = [];
+  let cancelRegId = null;
+  let currentFilter = 'all';
+
+  // ── Tab switching ──
+  function switchTab(id) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      const panels = ['my-events', 'profile'];
+      b.classList.toggle('active', panels[i] === id);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === 'tab-' + id);
+    });
+  }
+
+  // ── Filter chips ──
+  function filterRegs(f) {
+    currentFilter = f;
+    ['all','upcoming','past'].forEach(k => {
+      document.getElementById('chip-' + k).classList.toggle('active', k === f);
+    });
+    renderRegs();
+  }
+
+  // ── Load profile ──
+  async function loadProfile() {
+    try {
+      const u = await api.users.me();
+      const initials = u.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('avatar-initials').textContent = initials;
+      document.getElementById('profile-name').textContent    = u.full_name;
+      document.getElementById('profile-meta').innerHTML = `
+        <span>✉️ ${u.email}</span>
+        ${u.department ? `<span>🏛️ ${u.department}</span>` : ''}
+        <span>📅 Joined ${formatDate(u.created_at)}</span>
+      `;
+      // Pre-fill edit form
+      document.getElementById('edit-name').value = u.full_name;
+      if (u.department) {
+        const sel = document.getElementById('edit-dept');
+        [...sel.options].forEach(o => { if (o.value === u.department) o.selected = true; });
+      }
+    } catch (e) {
+      showToast('Could not load profile', 'error');
+    }
+  }
+
+  // ── Load registrations ──
+  async function loadRegs() {
+    try {
+      allRegs = await api.registrations.my();
+      renderRegs();
+    } catch (e) {
+      document.getElementById('regs-list').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-title">Could not load registrations</div>
+        </div>`;
+    }
+  }
+
+  function renderRegs() {
+    const now = new Date();
+    let list = allRegs;
+
+    if (currentFilter === 'upcoming') {
+      list = allRegs.filter(r => new Date(r.event_date) >= now);
+    } else if (currentFilter === 'past') {
+      list = allRegs.filter(r => new Date(r.event_date) < now);
+    }
+
+    const container = document.getElementById('regs-list');
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-title">No events here</div>
+          <div class="empty-state-desc">
+            ${currentFilter === 'all'
+              ? 'You haven\'t registered for any events yet.'
+              : `No ${currentFilter} events found.`}
+          </div>
+          ${currentFilter === 'all'
+            ? `<a href="/frontend/pages/events.html" class="btn btn-outline" style="margin-top:16px">Browse Events</a>`
+            : ''}
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(r => {
+      const emoji   = ['🎓','🚀','💡','🎤','🏆','🌟','💻','🎯'][r.event_id % 8];
+      const isPast  = new Date(r.event_date) < now;
+      const isCancelled = r.registration_status === 'cancelled';
+
+      return `
+        <div class="reg-card">
+          <div class="reg-card-emoji">${emoji}</div>
+          <div class="reg-card-body">
+            <div class="reg-card-title">${r.title}</div>
+            <div class="reg-card-meta">
+              ${isCancelled
+                ? `<span class="badge badge-red">Cancelled</span>`
+                : isPast
+                  ? `<span class="badge badge-yellow">Past</span>`
+                  : `<span class="badge badge-green">Upcoming</span>`}
+              ${r.checked_in ? `<span class="badge badge-cyan">✓ Checked in</span>` : ''}
+              ${r.category_name ? `<span class="badge badge-purple">${r.category_name}</span>` : ''}
+            </div>
+            <div class="reg-card-info">
+              <span class="reg-card-info-item">${calIcon()} ${formatDate(r.event_date)}</span>
+              ${r.venue   ? `<span class="reg-card-info-item">${pinIcon()} ${r.venue}</span>` : ''}
+              ${r.speaker ? `<span class="reg-card-info-item">${micIcon()} ${r.speaker}</span>` : ''}
+            </div>
+          </div>
+          <div class="reg-card-actions">
+            <a href="/frontend/pages/event.html?id=${r.event_id}" class="btn btn-ghost btn-sm">View</a>
+            ${!isCancelled && !isPast
+              ? `<button class="btn btn-danger btn-sm" onclick="askCancel(${r.registration_id}, '${r.title.replace(/'/g,"\\'")}')">Cancel</button>`
+              : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Cancel flow ──
+  function askCancel(regId, title) {
+    cancelRegId = regId;
+    document.getElementById('cancel-event-name').textContent = title;
+    openModal('cancel-modal');
+  }
+
+  async function confirmCancel() {
+    const btn = document.getElementById('confirm-cancel-btn');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div>`;
+    try {
+      await api.registrations.cancel(cancelRegId);
+      showToast('Registration cancelled', 'info');
+      closeModal('cancel-modal');
+      await loadRegs();
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Yes, cancel';
+    }
+  }
+
+  // ── Save profile ──
+  async function saveProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-btn');
+    const msg = document.getElementById('profile-msg');
+    msg.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spinner"></div> Saving…`;
+
+    const body = {
+      full_name:  document.getElementById('edit-name').value.trim() || undefined,
+      department: document.getElementById('edit-dept').value || undefined,
+      password:   document.getElementById('edit-pw').value   || undefined,
+    };
+
+    try {
+      await api.users.update(body);
+      showToast('Profile updated ✅', 'success');
+      // Refresh profile display
+      await loadProfile();
+      document.getElementById('edit-pw').value = '';
+    } catch (err) {
+      msg.style.cssText = 'display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-md);padding:12px;font-size:13px;color:#fca5a5';
+      msg.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Save changes';
+    }
+  }
+
+  // ── Init ──
+  renderNavAuth();
+  initHamburger();
+  loadProfile();
+  loadRegs();
+</script>
+</body>
+</html>
